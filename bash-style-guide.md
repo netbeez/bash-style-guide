@@ -15,12 +15,12 @@ set -o pipefail             # exit script if anything fails in pipe
 Always quote variables in double quotes (unless it breaks something).
 
 ```
-#good
+# good
 echo "$my_var"
 ```
 
 ```
-#bad
+# bad
 echo $my_var
 ```
 
@@ -28,12 +28,12 @@ echo $my_var
 Variables should *always* be explictly declared.
 
 ```
-#good
+# good
 declare -r MY_BAR="bizzbazz"
 ```
 
 ```
-#bad
+# bad
 MY_BAR="bizzbooz"
 ```
 
@@ -43,6 +43,9 @@ MY_BAR="bizzbooz"
 * Use lower-case inside functions
 * Use upper-case (all caps) outside function / for global variables
 
+### Globals
+Limit the use of globals. Most variables should be declared as `local`.
+
 #### `declare` statement
 The `declare` statement creates a variable with "normal" scoping. Use the readonly flag (`-r`) when possible. Use `-a` to indicate an array. Use `-i` to indicate an integer. `declare` should only be used in the *global* scope.
 
@@ -50,8 +53,6 @@ The `declare` statement creates a variable with "normal" scoping. Use the readon
 
 `declare -ra my_arr=("hello" "world" "!")`
  
-### Globals
-Limit the use of globals. Most variables should be declared as `local`.
 
 #### `readonly` statement
 `readonly` creates a constant variable (cannot be changed) in the global scope. This should *only* be used when you want to create a global variable from inside a function scope.
@@ -119,16 +120,12 @@ function foo(){
 bad_foo(){
 	echo "bar"
 }
-```
 
-```
 # bad
 function bad_foo{
 	echo "bar"
 }
-```
 
-```
 # bad - makes a subshell
 function bad_foo(
 	echo "bar"
@@ -143,7 +140,7 @@ Use many, small, well-named functions. Even putting "simple" logic inside a name
 Example:
 
 ```
-#good
+# good
 
 function kernel_name(){
 	echo $(uname)
@@ -155,7 +152,7 @@ function print_kernel(){
 ```
 
 ```
-#bad
+# bad
 
 function print_kernel(){
 	echo $(uname)
@@ -166,7 +163,7 @@ function print_kernel(){
 Function signatures cannot be set inside a function's parentheses. Variables should be passed and set inside a function explicitly as follows:
 
 ```
-#good
+# good
 function foo(){
 	local -r bar="$1"
 	local -r bizz="$2"
@@ -176,7 +173,7 @@ function foo(){
 ```
 
 ```
-#bad
+# bad
 function bad_foo(){
 	echo "$1 $2"
 }
@@ -264,8 +261,9 @@ function is_macos(){
 
 
 
-# Changing Directory
+# Directories
 
+## `cd`
 Change directories inside a subshell. 
 
 * helps prevent relative paths from breaking 
@@ -290,6 +288,25 @@ function my_cd(){
 	cd "/tmp/foo/bar"
 	bash "my_great_script.sh" --a-flag
 }
+```
+
+## relative paths
+When navigating by relative path, always being the path with `.` to indicate the current directory.
+
+```
+# good
+(	cd "./../foo/bar/"
+	# do stuff here
+)
+
+# good
+a_command --some-path="./bizz/bat"
+```
+```
+# bad
+(	cd "../foo/bar/"
+	# stuff
+)
 ```
 
 # Linting
