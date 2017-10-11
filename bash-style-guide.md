@@ -79,7 +79,7 @@ function foo(){
 
 
 #### `local` statement
-The `local` statement is an aliases of `declare`. It works the same way, except an error will be thrown if `local` is used outside of a funtion. The `-r` readonly option should always be used when possible. 
+The `local` statement is an aliases of `declare`. It works the same way, except an error will be thrown if `local` is used outside of a funtion. Due to this extra strictness, `local` should always be used over `declare` inside of functions. The `-r` readonly option should always be used when possible. 
 
 Example 0:
 
@@ -103,13 +103,35 @@ function bar(){
 }
 ```
 
+Example 2:
+
+```
+# don't do this with declare
+function bazz(){ 
+	declare -r msg="hello world!"
+	echo "$msg"
+}
+```
+
+#### when to use each declaration type
+
+* `local`
+	*  Only use inside functions.
+	*  When used outside a function it will throw an error.
+*  `declare`
+	*  Only use outside of functions (in the global scope).
+	*  Although it can be used inside a function, and will keep function scoping, `local` is more clear about intentions of the variable and is stricter.
+*  `readonly`
+	*  Only use *inside* functions that need *globally* scoped.
+	*  Although it can be used in the global scope for global declarations, `declare` is more clear about the intentions of the variable. When you see `readonly`, you know something is being declared outside of the current scope and into the global.
+
 # Functions
 
 ## Creation
 There are many ways to create `functions` in bash. Always create them like so:
 
 ```
-# good
+# good - this style is most clear that a function is declared
 function foo(){
 	echo "bar"
 }
