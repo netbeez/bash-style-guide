@@ -11,17 +11,27 @@ set -o pipefail             # exit script if anything fails in pipe
 
 
 # Variables
-### Quoting
-Always quote variables in double quotes (unless it breaks something).
+### Quoting and Brackets
+Always quote variables in double quotes and brackets (unless it breaks something).
+
+Brackets: Don't let bash determine what part of a string needs expanded into a variable.
 
 ```
+# okay
+echo "$my_foo"
+echo "using file: my_$a_var_file"
+
+
 # good
-echo "$my_var"
+echo "${my_var}"
+echo "using file: my_${a_var}_file"
+
 ```
 
 ```
 # bad
 echo $my_var
+
 ```
 
 ### Creating Variables
@@ -49,30 +59,50 @@ Limit the use of globals. Most variables should be declared as `local`.
 #### `declare` statement
 The `declare` statement creates a variable with "normal" scoping. Use the readonly flag (`-r`) when possible. Use `-a` to indicate an array. Use `-i` to indicate an integer. `declare` should only be used in the *global* scope.
 
-`declare -r my_foo="hello world"`
+```
+# good
+declare MY_AWESOME_GLOBAL="hello world"
+declare -ri MY_COOL_INT=5
+declare -ra MY_ARRAY=("hello" "world" "!")
 
-`declare -ra my_arr=("hello" "world" "!")`
- 
+
+function foo(){
+	# some code
+}
+```
+
+```
+# bad
+
+function foo(){
+	declare MY_AWESOME_GLOBAL="hello world"
+	declare -ri MY_COOL_INT=5
+
+	# some code
+}
+
+```
+
 
 #### `readonly` statement
-`readonly` creates a constant variable (cannot be changed) in the global scope. This should *only* be used when you want to create a global variable from inside a function scope.
+`readonly` creates a constant variable (cannot be changed) in the global scope. This should *only* be used when you want to create a global variable from inside a function scope. There should be very few cases where use need to use `readonly`.
 
 
 ```
 # good
 function foo(){
 	readonly MY_FOO="hello world!"
-	echo "$MY_FOO" # output: "hello world!"
+	echo "${MY_FOO}" # output: "hello world!"
 }
 
-echo "$MY_FOO" # output: "hello world!"
+echo "${MY_FOO}" # output: "hello world!"
 ```
 
 ```
 # bad
 readonly MY_FOO="hello world!"
 function foo(){
-	echo "$MY_FOO" # output: "hello world!"
+	echo "${MY_FOO}" # output: "hello world!"
 }
 
 ```
@@ -88,8 +118,8 @@ Example 0:
 function foo(){ 
 	local -r msg="hello world!"
 	local -ri num=5
-	echo "$msg"
-	echo "$num"
+	echo "${msg}"
+	echo "${num}"
 }
 ```
 
@@ -99,7 +129,7 @@ Example 1:
 # this will throw an error
 local -r MSG="hello world!"
 function bar(){
-	echo "$MSG"
+	echo "${MSG}"
 }
 ```
 
@@ -109,7 +139,7 @@ Example 2:
 # don't do this with declare
 function bazz(){ 
 	declare -r msg="hello world!"
-	echo "$msg"
+	echo "${msg}"
 }
 ```
 
@@ -124,6 +154,22 @@ function bazz(){
 *  `readonly`
 	*  Only use *inside* functions that need *globally* scoped.
 	*  Although it can be used in the global scope for global declarations, `declare` is more clear about the intentions of the variable. When you see `readonly`, you know something is being declared outside of the current scope and into the global.
+
+
+### Putting it all together
+
+```
+# a good example of variable use
+
+declare -r PROGRAM="$0"
+
+function foo(){
+	local -r str="hello world!"
+	echo "$PROGRAM: ${str}"
+}
+
+
+```
 
 # Functions
 
