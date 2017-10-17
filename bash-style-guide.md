@@ -85,14 +85,14 @@ function foo(){
 
 
 #### `readonly` statement
-`readonly` creates a constant variable (cannot be changed) in the global scope. This should *only* be used when you want to create a global variable from inside a function scope. There should be very few cases where use need to use `readonly`.
+`readonly` creates a constant variable (cannot be changed) in the global scope. This should *only* be used when you want to create a global variable from inside a function scope.
 
 
 ```
 # good
 function foo(){
 	readonly MY_FOO="hello world!"
-	echo "${MY_FOO}" # output: "hello world!"
+	echo "${MY_FOO" # output: "hello world!"
 }
 
 echo "${MY_FOO}" # output: "hello world!"
@@ -376,6 +376,37 @@ a_command --some-path="./bizz/bat"
 	# stuff
 )
 ```
+
+
+# Catch errors
+
+Now that the script exist immediately upon an error, we need to catch and handle them when they happen. Bash doesn't have a try/catch, but we can emulate it.
+
+```
+{ # try
+
+    command1
+    command 2
+    #save your output
+
+} || { # catch
+    # save log for exception 
+    # handle the error
+}
+```
+
+Alternatively:
+
+```
+command1 || true # continue execution without any handling
+```
+
+Remember, the following will cause the script to exit immediatly (if script is evaulated strictly):
+
+```
+command 1 # returns non-zero
+```
+
 
 # Linting
 
