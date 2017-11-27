@@ -1,5 +1,5 @@
 # Netbeez Bash Style Guide
-created by Joshua Sarver
+created by [Joshua Sarver](https://github.com/joshS314159)
 
 
 
