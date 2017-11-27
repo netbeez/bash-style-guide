@@ -1,3 +1,7 @@
+# Netbeez Bash Style Guide
+created by Joshua Sarver
+
+
 
 # Environment Settings
 Always use the following to evaluate your script more strictly:
