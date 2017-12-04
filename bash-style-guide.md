@@ -414,7 +414,14 @@ command 1 # returns non-zero
 
 # Linting
 
-[Use shellcheck for linting](https://github.com/koalaman/shellcheck). *Always* lint your scripts.
+[Use shellcheck for linting](https://github.com/koalaman/shellcheck). 
+
+*Always* lint your scripts.
+
+If lint warnings conflict with any rules here, the lint suggestions should take precedence. However, the linter suggestions can usually be brought to consistency with these rules.
+
+The linter takes precedence because it fixes common mistakes and prevents common problems. This is just a style-guide.
+
 
 # More?
 
