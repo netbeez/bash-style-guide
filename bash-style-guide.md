@@ -412,6 +412,79 @@ command 1 # returns non-zero
 ```
 
 
+# "Returning" data
+
+Bash can't directly return data from functions (only exit codes). There are two recommended ways to return data: via subshell or a global variable (recommended).
+
+* The subshell method is more conventional but conflicts with stdout.
+* The only downside of a global variable is that it's a global variable. 
+
+Subshell method:
+
+```
+function foo(){
+	local -r my_cool_value="hello world!"
+	echo "${my_cool_value}"
+}
+
+function foo_conflict(){
+	local -r my_cool_value="hello world"
+
+	echo "You are now in foo! This is a great function."
+	echo "${my_cool_value}"
+}
+
+function main(){
+	local foo_val="$(foo)"
+	echo "${foo_val}" # hello world!
+	
+	local foo_conflict_val="$(foo_conflict)"
+	echo "${foo_conflict_val}" # You are now in foo! This is a great function.\nhello world!
+	
+}
+
+```
+
+As you can see, anything thrown to stdout gets "returned". If you are strictly echo'ing/logging to a file, this method is okay. However, if you plan to echo to stdout this method is not ideal. Don't break consistency by only logging from functions that aren't called as a sub-shell. If this is the predictament you're in, the global variable method is for you!
+
+Global variable method:
+
+```
+declare _RESULT_=""
+
+function bar(){
+	local -r my_cool_value="goodbye world!"
+	
+	_RESULT_="${my_cool_value}"
+}
+
+function bar_no_conflict(){
+	local -r my_cool_value="goodbye world!"
+	echo "get back to work!"
+	_RESULT_="${my_cool_value}"
+}
+
+
+
+function main(){
+	bar
+	local -r bar_val="${_RESULT_}"
+	
+	echo "${bar_val}" # goodbye world!
+	
+	
+	bar_no_conflict
+	local -r bar_no_conflict_val="${_RESULT_}"
+	
+	echo "${bar_no_conflict_val}" # goodbye world!
+	
+}
+
+```
+
+If you use this method, do **NOT** abuse `_RESULT_`. Treat it like a returned value. In other words, either ignore it or assign it immediately to something local directly below or beside the associated function call. Don't use it to hold a value for later. Global are bad, don't treat `_RESULT_` like one. 
+
+
 # Linting
 
 [Use shellcheck for linting](https://github.com/koalaman/shellcheck). 
@@ -425,9 +498,11 @@ The linter takes precedence because it fixes common mistakes and prevents common
 
 # More?
 
+Remember, bash is hard enough to read. Don't make it harder to read.
 
 This guide isn't meant to cover everything. See more here:
 
 * [Google Bash Style Guide](https://google.github.io/styleguide/shell.xml)
 
 * [Defensive Bash Programming](http://www.kfirlavi.com/blog/2012/11/14/defensive-bash-programming/)
+
