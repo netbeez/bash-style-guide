@@ -634,6 +634,18 @@ If lint warnings conflict with any rules here, the lint suggestions should take 
 
 The linter takes precedence because it fixes common mistakes and prevents common problems. This is guide is mostly related to style.
 
+# Summary
+
+There are many suggestions in here. Here are a few key take-aways:
+
+1. Put everything in small, well-defined functions
+2. Use a `main`
+2. Explicitly declare your variables
+3. Keep global variables to a minimum, pass around local variables
+4. Quote all variables when possible
+3. Set environment options so common-sense errors are thrown
+
+
 
 # More?
 
