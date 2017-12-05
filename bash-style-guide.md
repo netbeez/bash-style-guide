@@ -504,5 +504,7 @@ This guide isn't meant to cover everything. See more here:
 
 * [Google Bash Style Guide](https://google.github.io/styleguide/shell.xml)
 
+* [Bash FAQ](http://mywiki.wooledge.org/BashFAQ#BashFAQ.2F084.How_do_I_return_a_string_.28or_large_number.2C_or_negative_number.29_from_a_function.3F__.22return.22_only_lets_me_give_a_number_from_0_to_255.)
+
 * [Defensive Bash Programming](http://www.kfirlavi.com/blog/2012/11/14/defensive-bash-programming/)
 
