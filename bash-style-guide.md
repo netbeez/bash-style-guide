@@ -2,8 +2,11 @@
 created by [Joshua Sarver](https://github.com/joshS314159)
 
 
+# Shebang
 
-# Environment Settings
+Always put `#!/bin/bash`, or whatever shell you intend to use, at the top of the script.
+
+# Environment settings
 Always use the following to evaluate your script more strictly:
 
 ```
@@ -15,13 +18,14 @@ set -o pipefail             # exit script if anything fails in pipe
 
 
 # Variables
-### Quoting and Brackets
+### Quoting and brackets
 Always quote variables in double quotes and brackets (unless it breaks something).
 
 Brackets: Don't let bash determine what part of a string needs expanded into a variable.
 
 ```
-# okay
+# bad
+echo $my_var
 echo "$my_foo"
 echo "using file: my_$a_var_file"
 
@@ -32,13 +36,8 @@ echo "using file: my_${a_var}_file"
 
 ```
 
-```
-# bad
-echo $my_var
 
-```
-
-### Creating Variables
+### Creating variables
 Variables should *always* be explictly declared.
 
 ```
@@ -51,6 +50,12 @@ declare -r MY_BAR="bizzbazz"
 MY_BAR="bizzbooz"
 ```
 
+Note: Sometimes the linter will give the following warning ([SC2155](https://github.com/koalaman/shellcheck/wiki/SC2155)) regarding masked return values. Make sure you read the documentation on this and understand it. As an example, it can stylistically written/solved as:
+
+```
+MY_BAR="a_string_$(some_cmd)"; declare -r MY_BAR
+```
+
 ### Naming
 
 * Use snake_case
@@ -59,6 +64,8 @@ MY_BAR="bizzbooz"
 
 ### Globals
 Limit the use of globals. Most variables should be declared as `local`.
+
+Put your globals in `main` and pass them around. That's what `main` is for!
 
 #### `declare` statement
 The `declare` statement creates a variable with "normal" scoping. Use the readonly flag (`-r`) when possible. Use `-a` to indicate an array. Use `-i` to indicate an integer. `declare` should only be used in the *global* scope.
@@ -99,7 +106,11 @@ function foo(){
 	echo "${MY_FOO" # output: "hello world!"
 }
 
-echo "${MY_FOO}" # output: "hello world!"
+function main(){
+    foo
+    echo "${MY_FOO}" # output: "hello world!"
+}
+
 ```
 
 ```
@@ -147,7 +158,7 @@ function bazz(){
 }
 ```
 
-#### when to use each declaration type
+#### When to use each declaration type
 
 * `local`
 	*  Only use inside functions.
@@ -165,7 +176,7 @@ function bazz(){
 ```
 # a good example of variable use
 
-declare -r PROGRAM="$0"
+declare -r PROGRAM="${0}"
 
 function foo(){
 	local -r str="hello world!"
@@ -207,7 +218,7 @@ function bad_foo(
 ## General
 Always put logic/code inside functions. The only things that should go in the global scope is the environment settings, global variables, and the call to `main`.
 
-Use many, small, well-named functions. Even putting "simple" logic inside a named-function makes the code easier to read.
+Use many, small, well-named functions. Even putting "simple" logic inside a named-function makes the code easier to read. Especially if the command might have a confusing name.
 
 Example:
 
@@ -215,19 +226,31 @@ Example:
 # good
 
 function kernel_name(){
-	echo $(uname)
+	echo "$(uname)"
 }
 
-function print_kernel(){
-	echo $(kernel_name)
+function is_darwin(){
+	local status="false"
+	
+   if [[ "$(kernel_name)" == "Darwin" ]]; then
+   		status="true"
+   	fi
+	
+	echo "${status}"
 }
 ```
 
 ```
 # bad
 
-function print_kernel(){
-	echo $(uname)
+function is_darwin(){
+	local status="false"
+	
+   if [[ "$(uname)" == "Darwin" ) ]]; then
+   		status="true"
+   	fi
+	
+	echo "${status}"
 }
 ```
 
@@ -237,17 +260,17 @@ Function signatures cannot be set inside a function's parentheses. Variables sho
 ```
 # good
 function foo(){
-	local -r bar="$1"
-	local -r bizz="$2"
+	local -r bar="${1}"
+	local -r bizz="${2}"
 	
-	echo "$bar $bizz"
+	echo "${bar} ${bizz}"
 }
 ```
 
 ```
 # bad
 function bad_foo(){
-	echo "$1 $2"
+	echo "${1} ${2}"
 }
 ```
 	
@@ -266,7 +289,7 @@ main
 ```
 
 ## `initialize` function
-Create an `initialize` function where applicable. Use this function to initialize the script. For example, function to parse user input should be called from `initialize`
+Create an `initialize` function where applicable. Use this function to initialize the script. For example, the function to parse user input should be called from `initialize`
 
 
 # Parameters
@@ -304,7 +327,7 @@ main
 ```
 
 
-# Conditional Statements
+# Conditional statements
 
 Use double brackets (`[[ ]]`) where possible over single brakets.
 
@@ -312,9 +335,15 @@ Use double brackets (`[[ ]]`) where possible over single brakets.
 # good 
 
 function is_macos(){
+   local msg=""
+   
 	if [[ $(kernel_name) == "Darwin" ]]; then
-		echo "is macos!"
+		msg="is macos!"
+	else
+		msg="not macos"
 	fi
+	
+	echo "${msg}"
 }
 
 ```
@@ -362,8 +391,8 @@ function my_cd(){
 }
 ```
 
-## relative paths
-When navigating by relative path, always being the path with `.` to indicate the current directory.
+## Relative paths
+When navigating by relative path, always begin the path with `.` to indicate the current directory.
 
 ```
 # good
@@ -520,6 +549,81 @@ If you can't use Method 2, evaluate the other methods to use based on your use c
 Where wouldn't you use Method 2? If you really, really need to send data to stdout. For example, Docker handles log streams from stdout and stderr. It would be a poor decision to redirect all logging to stderr inside a container.
 
 
+# Single exit rule
+
+This doesn't always apply. Sometimes it can make the code harder to read or is near impossible to achieve. Generally, it's a good rule to follow though.
+
+```
+
+# bad
+# ***not the best example, make a better one***
+function is_foo(){
+	local -r input="${1}"
+	
+	if [[ "${input}" == "hello" ]]; then
+		echo "true" 
+	elif [[ "${input}" == "world" ]]; then
+		echo "true" 
+	elif [[ "${input}" == "bad1" ]]; then
+		echo "false" 
+	elif [[ "${input}" == "bad2" ]] ; then
+		echo "false" 	
+	else
+		echo "false"
+	fi
+}
+
+# good (also has the benefit of less statements in this case)
+# ***not the best example, make a better one***
+function is_foo(){
+	local -r input="${1}"
+	
+	local status="false"
+	
+	if [[ "${input}" == "hello" ]]; then
+		status="true" 
+	elif [[ "${input}" == "world" ]]; then
+		status="true" 
+	fi
+	
+	echo "${status}"
+}
+	
+```
+
+# One command per line & long options
+
+Try to keep it to one command per line for easier reading.
+
+When using arcane options, prefer long options where possible.
+
+
+```
+#bad
+function complex_bar(){
+	complex_cmd --bizz="abc" --batt="def" --open="zyx" --now
+}
+
+#bad
+function unzip_me(){
+	tar -zdcgtyhnjkiopwe /tmp/some_file.zip # tar feels like this
+}
+
+
+#good
+function complex_bar(){
+	complex_cmd \
+		--bizz="abc" \
+		--batt="def" \
+		--open="zyx" \
+		--now
+}
+```
+
+Long options aren't always possible to use. Sometimes they might not make sense. For example, it might be okay to assume `mkdir -p /some/dir` doesn't need to use long-params, since it is commonly used. 
+
+Look at long-parameters like named parameters in other languages. It's a good way to make your code clear, but it might also be overkill for a function that simply adds two numbers.
+
 # Linting
 
 [Use shellcheck for linting](https://github.com/koalaman/shellcheck). 
@@ -528,18 +632,16 @@ Where wouldn't you use Method 2? If you really, really need to send data to stdo
 
 If lint warnings conflict with any rules here, the lint suggestions should take precedence. However, the linter suggestions can usually be brought to consistency with these rules.
 
-The linter takes precedence because it fixes common mistakes and prevents common problems. This is just a style-guide.
+The linter takes precedence because it fixes common mistakes and prevents common problems. This is guide is mostly related to style.
 
 
 # More?
 
-Remember, bash is hard enough to read. Don't make it harder to read.
+This guide isn't meant to cover everything. See more here (ranked):
 
-This guide isn't meant to cover everything. See more here:
+1. [Bash FAQ](http://mywiki.wooledge.org/BashFAQ#BashFAQ.2F084.How_do_I_return_a_string_.28or_large_number.2C_or_negative_number.29_from_a_function.3F__.22return.22_only_lets_me_give_a_number_from_0_to_255.)
 
-* [Google Bash Style Guide](https://google.github.io/styleguide/shell.xml)
+2. [Google Bash Style Guide](https://google.github.io/styleguide/shell.xml)
 
-* [Bash FAQ](http://mywiki.wooledge.org/BashFAQ#BashFAQ.2F084.How_do_I_return_a_string_.28or_large_number.2C_or_negative_number.29_from_a_function.3F__.22return.22_only_lets_me_give_a_number_from_0_to_255.)
-
-* [Defensive Bash Programming](http://www.kfirlavi.com/blog/2012/11/14/defensive-bash-programming/)
+3. [Defensive Bash Programming](http://www.kfirlavi.com/blog/2012/11/14/defensive-bash-programming/)
 
