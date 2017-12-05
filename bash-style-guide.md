@@ -408,18 +408,20 @@ command1 || true # continue execution without any handling
 Remember, the following will cause the script to exit immediatly (if script is evaulated strictly):
 
 ```
-command 1 # returns non-zero
+command1 # returns non-zero
 ```
 
 
 # "Returning" data
 
-Bash can't directly return data from functions (only exit codes). There are two recommended ways to return data: via subshell or a global variable (recommended).
+Bash can't directly return data from functions (only exit codes). There are three recommended ways to return data: via subshell, subshell with redirection, or a global variable.
 
-* The subshell method is more conventional but conflicts with stdout.
+* The subshell method is more conventional but conflicts with stdout. This requires a workaround.
+
 * The only downside of a global variable is that it's a global variable. 
 
-Subshell method:
+
+###1. Subshell method (w/o work-around):
 
 ```
 function foo(){
@@ -447,7 +449,31 @@ function main(){
 
 As you can see, anything thrown to stdout gets "returned". If you are strictly echo'ing/logging to a file, this method is okay. However, if you plan to echo to stdout this method is not ideal. Don't break consistency by only logging from functions that aren't called as a sub-shell. If this is the predictament you're in, the global variable method is for you!
 
-Global variable method:
+###2. Subshell method w/stderr redirection:
+
+```
+function log(){
+    local -r msg="${1}"
+    echo "${msg}" >&2 # redirects all data to stderr, which isn't captured 
+}
+
+function foo(){
+    local -r my_cool_value="hello world!"
+
+    log "I sure hope this text isn't 'returned'"
+
+    echo "${my_cool_value}"
+}
+
+function main(){
+    local foo_val="$(foo)"
+    echo "${foo_val}" # hello world!
+}
+```
+Anything echo'd to stdout is redirected to stderr. This will still print any logging to the console, but it won't be captured by "super"-shells.
+
+
+###3. Global variable method:
 
 ```
 declare _RESULT_=""
@@ -483,6 +509,15 @@ function main(){
 ```
 
 If you use this method, do **NOT** abuse `_RESULT_`. Treat it like a returned value. In other words, either ignore it or assign it immediately to something local directly below or beside the associated function call. Don't use it to hold a value for later. Global are bad, don't treat `_RESULT_` like one. 
+
+
+### Best method?
+
+Method 2 is generally the best method.
+
+If you can't use Method 2, evaluate the other methods to use based on your use case.
+
+Where wouldn't you use Method 2? If you really, really need to send data to stdout. For example, Docker handles log streams from stdout and stderr. It would be a poor decision to redirect all logging to stderr inside a container.
 
 
 # Linting
