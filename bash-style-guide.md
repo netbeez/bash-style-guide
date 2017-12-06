@@ -196,14 +196,14 @@ There are many ways to create `functions` in bash. Always create them like so:
 function foo(){
 	echo "bar"
 }
-```
 
-```
-# bad
+# okay (more portable)
 bad_foo(){
 	echo "bar"
 }
+```
 
+```
 # bad
 function bad_foo{
 	echo "bar"
@@ -217,6 +217,10 @@ function bad_foo(
 
 ## General
 Always put logic/code inside functions. The only things that should go in the global scope is the environment settings, global variables, and the call to `main`.
+
+Never nest functions. 
+
+Functions cannot be empty.
 
 Use many, small, well-named functions. Even putting "simple" logic inside a named-function makes the code easier to read. Especially if the command might have a confusing name.
 
@@ -440,6 +444,70 @@ Remember, the following will cause the script to exit immediatly (if script is e
 command1 # returns non-zero
 ```
 
+# "Importing"
+
+## Functions/variables from scripts
+
+If you'd like to share a function or variable across several scripts, create a script that doesn't self-execute. In this case, you probably won't need a `main` function. Using `source` pulls the data of the separate script into your current environment, it does **not** create a new environment.
+
+"Importing" functions:
+
+```
+# file: my-great-library.sh
+function foo(){
+    echo "this is foo!"
+}
+```
+
+```
+# file: main.sh
+source "./my-great-library.sh"
+
+function bar(){
+    echo "this is bar!"
+}
+
+function main(){
+	foo # this is foo!
+	bar # this is bar!
+}
+
+```
+
+## Environment variables
+
+Note that `set -u` will cause an `exit 1` when referring to an environment variable, because the environment variable was not declared in your script (even though it might/does exist).
+
+
+```
+#...
+set -u                      # exit script if uninitialized variable is used
+#...
+
+function main(){
+	echo "${MY_ENV_VAR_THAT_DEFINITELY_EXISTS}" # exit 1
+}
+
+```
+
+How do we get around this? By declaring the variable in the file explicitly before setting restrictions. "Importing" it.
+
+```
+declare -r AN_ENV_VAR="${AN_ENV_VAR}"
+
+#...
+set -u                      # exit script if uninitialized variable is used
+#...
+
+function main(){
+	echo "${AN_ENV_VAR}" # <contents of variable>
+}
+
+```
+
+If you need to update the environment variable, just use the `export` keyword as usual.
+
+
 
 # "Returning" data
 
@@ -640,10 +708,11 @@ There are many suggestions in here. Here are a few key take-aways:
 
 1. Put everything in small, well-defined functions
 2. Use a `main`
-2. Explicitly declare your variables
-3. Keep global variables to a minimum, pass around local variables
-4. Quote all variables when possible
-3. Set environment options so common-sense errors are thrown
+3. Explicitly declare your variables
+4. Keep global variables to a minimum, pass around local variables
+5. Quote all variables when possible
+6. Set environment options so common-sense errors are thrown
+7. Use common sense. Most of these rules don't apply 100% of the time. But try to follow as closely as possible, and break convention when needed. Some shells (`sh`) doesn't support all these features, etc. What's important is to add structure wherever possible.
 
 
 
@@ -656,4 +725,6 @@ This guide isn't meant to cover everything. See more here (ranked):
 2. [Google Bash Style Guide](https://google.github.io/styleguide/shell.xml)
 
 3. [Defensive Bash Programming](http://www.kfirlavi.com/blog/2012/11/14/defensive-bash-programming/)
+
+
 
