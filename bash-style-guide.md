@@ -692,6 +692,130 @@ Long options aren't always possible to use. Sometimes they might not make sense.
 
 Look at long-parameters like named parameters in other languages. It's a good way to make your code clear, but it might also be overkill for a function that simply adds two numbers.
 
+# Temporary files
+
+Some scripts need to write temporary information to disk. One of the safest ways is to create a temporary directory via `mktemp -d`. This will create an empty and randomly named directory that can be written to. No more managing directories inside of `/tmp` or somewhere not suited at all for temporary files.
+
+
+# Cleaning up temporary files with traps
+
+Some scripts need to write information to disk that needs removed upon exit. Because of the environment options set at the top of the script, an unhandled exception (`exit 1`) will cause the script to exit immediately without executing any other logic. Or maybe a user decides to abort the script.
+
+To force cleanup to occur, use an `exit trap`. An exit trap will execute a function after an abort signal is given.
+
+Example:
+
+```
+function a_bad_foo(){
+    echo "this function is bad and fails :("
+    exit 1
+}
+
+
+function clean_up(){
+    # clean up junk files
+    echo "Hi! This is the really great clean_up function"
+}
+
+function initialize(){
+    echo "initializing some cool stuff"
+    
+    #### THE EXIT TRAP
+	trap clean_up EXIT # execute function upon exit
+}
+
+function main(){
+    initialize
+    
+    a_bad_foo
+}
+main
+
+# OUTPUT 
+# initializing some cool stuff
+# this function is bad and fails :(
+# Hi! This is the really great clean_up function
+
+
+```
+
+In most cases the `trap` should be put inside of the initialization function, but before something could fail.
+
+
+An example of bad placement:
+
+```
+function a_bad_foo(){
+    echo "this function is bad and fails :("
+    exit 1
+}
+
+function clean_up(){
+    # clean up junk files
+    echo "Hi! This is the really great clean_up function"
+}
+
+
+function main(){
+    a_bad_foo
+    
+    trap clean_up EXIT 
+    # BAD placement
+    # this command is never evaluated because a_bad_foo kills the script
+    
+}
+main
+```
+
+Don't place the `trap` outside of a function though. Remember, everything beside global variable declarations should be in a function.
+
+
+# Self-logging scripts/functions
+
+Now that we have all of these well-named and specific functions, it's really duplicate work to do the following:
+
+```
+function is_this_a_great_function(){
+    log "checking if this function is great"
+    echo "false"
+}
+```
+
+
+Instead, log the dynamic function name like so:
+
+```
+function log_func(){
+    local -r function_name="${1}"
+    log "${function_name}()"
+}
+
+
+function is_this_a_great_function(){
+    log_func "${FUNCNAME[0]}"
+    
+    echo "true"
+}
+
+```
+
+Here's some sample output of a script. This makes debugging/tracing extremely easy:
+
+```
+agent_setup.sh: main()
+agent_setup.sh: initialize()
+agent_setup.sh: initialize_input()
+agent_setup.sh: check_input()
+agent_setup.sh: echo_count()
+
+```
+
+This isn't to say that functions can't have additional logging. But including `log_func "${FUNCNAME[0]}"` at the top of (most) functions makes for easily logging scripts.
+
+If you decide to go this route, it's probably best not call `log_func` from your other logging functions.
+
+
+
 # Linting
 
 [Use shellcheck for linting](https://github.com/koalaman/shellcheck). 
