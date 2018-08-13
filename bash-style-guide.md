@@ -61,6 +61,11 @@ MY_BAR="a_string_$(some_cmd)"; declare -r MY_BAR
 * Use snake_case
 * Use lower-case inside functions
 * Use upper-case (all caps) outside function / for global variables
+* Append `_dirname` when a variable contains the name (and only the name) of a directory
+* Append `_dirpath` when a variable contains the full path to a directory
+* Append `_filename` when a variable contains the name (and only the name) of a file
+* Append `_filepath` when a variable contains the full path to a file
+* Of course, these rules can be expanded to `sockets` etc.
 
 ### Globals
 Limit the use of globals. Most variables should be declared as `local`.
