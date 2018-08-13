@@ -22,10 +22,10 @@ set -o pipefail             # exit script if anything fails in pipe
 #########################
 declare -ra ARGS=("$@")
 
-CALL_DIR="$(PWD)"; declare -r CALL_DIR
-CALL_PATH="${CALL_DIR}/${0}"; declare -r CALL_PATH 
-SCRIPT_NAME="$(basename "${CALL_PATH}")"; declare -r SCRIPT_NAME
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"; declare -r SCRIPT_DIR
+CALLING_DIRPATH="$(pwd)"; declare -r CALLING_DIRPATH
+SCRIPT_FILENAME="$(basename "${0}")"; declare -r SCRIPT_FILENAME
+SCRIPT_DIRPATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"; declare -r SCRIPT_DIRPATH
+declare -r SCRIPT_FILEPATH="${SCRIPT_DIRPATH}/${SCRIPT_FILENAME}"
 
 LOG_FILE="/tmp/$(date +%s).log"; declare -r LOG_FILE
 
@@ -36,7 +36,7 @@ LOG_FILE="/tmp/$(date +%s).log"; declare -r LOG_FILE
 
 function log(){
     local -r msg="${1}"
-    local -r full_msg="${SCRIPT_NAME}: ${msg}"
+    local -r full_msg="${SCRIPT_FILENAME}: ${msg}"
 
     echo "${full_msg}" >&2
     echo "${full_msg}" >> "${LOG_FILE}"
@@ -82,18 +82,18 @@ function usage(){
 function initialize_input(){
     log_func "${FUNCNAME[0]}"
 
-    local -r args="$@" 
+    local -ra args=( "${@}" )
 
-    local is_help="false"
-    local is_flags="true"
+    local is_help='false'
+    local is_flags='true'
 
-    local -r OPTS=$(getopt -o dish --long ,help -- $args);
-    eval set -- "$OPTS";
+    local -r opts=$( getopt -o dish --long ,help -- "${args[@]}" );
+    eval set -- "${opts}";
     while true ; do
-        case "$1" in
+        case "${1}" in
             --help)
-                is_help="true"
-                is_flags="true"
+                is_help='true'
+                is_flags='true'
                 shift 1;
                 ;;
             *)
